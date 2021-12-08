@@ -354,12 +354,18 @@ impl IndexerRpc for IndexerRpcImpl {
                 let index =
                     u32::from_be_bytes(key[key.len() - 4..].try_into().expect("stored index"));
                 let out_point = packed::OutPoint::new(tx_hash, index);
-                let (block_number, tx_index, output, output_data) = Value::parse_cell_value(
-                    &snapshot
-                        .get(Key::OutPoint(&out_point).into_vec())
-                        .expect("get OutPoint should be OK")
-                        .expect("stored OutPoint"),
-                );
+                let raw_data = match snapshot
+                    .get(Key::OutPoint(&out_point).into_vec())
+                    .expect("get OutPoint should be OK")
+                {
+                    Some(raw_data) => raw_data,
+                    None => {
+                        error!("Missing stored OutPoint, skip");
+                        return None;
+                    }
+                };
+                let (block_number, tx_index, output, output_data) =
+                    Value::parse_cell_value(&raw_data);
 
                 if let Some(prefix) = filter_prefix.as_ref() {
                     match filter_script_type {
@@ -591,12 +597,18 @@ impl IndexerRpc for IndexerRpcImpl {
                 let index =
                     u32::from_be_bytes(key[key.len() - 4..].try_into().expect("stored index"));
                 let out_point = packed::OutPoint::new(tx_hash, index);
-                let (block_number, _tx_index, output, output_data) = Value::parse_cell_value(
-                    &snapshot
-                        .get(Key::OutPoint(&out_point).into_vec())
-                        .expect("get OutPoint should be OK")
-                        .expect("stored OutPoint"),
-                );
+                let raw_data = match snapshot
+                    .get(Key::OutPoint(&out_point).into_vec())
+                    .expect("get OutPoint should be OK")
+                {
+                    Some(raw_data) => raw_data,
+                    None => {
+                        error!("Missing stored OutPoint, skip");
+                        return None;
+                    }
+                };
+                let (block_number, _tx_index, output, output_data) =
+                    Value::parse_cell_value(&raw_data);
 
                 if let Some(prefix) = filter_prefix.as_ref() {
                     match filter_script_type {
